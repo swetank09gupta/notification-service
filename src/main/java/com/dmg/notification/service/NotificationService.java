@@ -59,10 +59,17 @@ public class NotificationService {
 
         boolean isScheduled = req.getScheduledAt() != null && req.getScheduledAt().isAfter(Instant.now());
 
+        String recipientRef = req.getRecipientRef() != null ? req.getRecipientRef()
+                : req.getEmail() != null ? req.getEmail()
+                : req.getPhone() != null ? req.getPhone()
+                : req.getUserId() != null ? req.getUserId()
+                : req.getDeviceToken() != null ? req.getDeviceToken()
+                : "unknown";
+
         NotificationRequest notifRequest = NotificationRequest.builder()
                 .tenant(tenant)
                 .template(template)
-                .recipientRef(req.getRecipientRef())
+                .recipientRef(recipientRef)
                 .variables(req.getVariables())
                 .channels(String.join(",", channels.stream().map(Enum::name).toList()))
                 .status(isScheduled ? RequestStatus.SCHEDULED : RequestStatus.PENDING)

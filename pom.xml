@@ -184,6 +184,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Actuator — provides MeterRegistry, health, info endpoints -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Micrometer Prometheus — exposes /actuator/prometheus for scraping -->
         <dependency>
             <groupId>io.micrometer</groupId>

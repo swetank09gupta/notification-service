@@ -9,7 +9,7 @@ import com.dmg.notification.domain.enums.AttemptStatus;
 import com.dmg.notification.domain.enums.NotificationStatus;
 import com.dmg.notification.kafka.NotificationEventPublisher;
 import com.dmg.notification.kafka.NotificationStatusPublisher;
-import com.dmg.notification.ratelimit.RateLimiterRegistry;
+import com.dmg.notification.ratelimit.RedisRateLimiterRegistry;
 import com.dmg.notification.repository.NotificationRequestRepository;
 import com.dmg.notification.repository.DeliveryAttemptRepository;
 import com.dmg.notification.repository.NotificationRepository;
@@ -48,7 +48,7 @@ import java.util.UUID;
 public class DispatchService {
 
     private final Map<String, ChannelDispatcher> dispatchers;
-    private final RateLimiterRegistry rateLimiterRegistry;
+    private final RedisRateLimiterRegistry rateLimiterRegistry;
     private final CircuitBreakerRegistry circuitBreakerRegistry;
     private final NotificationEventPublisher eventPublisher;
     private final NotificationStatusPublisher statusPublisher;
@@ -59,7 +59,7 @@ public class DispatchService {
     private final NotificationMetrics metrics;
 
     public DispatchService(java.util.List<ChannelDispatcher> channelDispatchers,
-                           RateLimiterRegistry rateLimiterRegistry,
+                           RedisRateLimiterRegistry rateLimiterRegistry,
                            CircuitBreakerRegistry circuitBreakerRegistry,
                            NotificationEventPublisher eventPublisher,
                            NotificationStatusPublisher statusPublisher,

@@ -12,7 +12,7 @@ import com.dmg.notification.domain.enums.NotificationStatus;
 import com.dmg.notification.kafka.NotificationEventPublisher;
 import com.dmg.notification.kafka.NotificationStatusPublisher;
 import com.dmg.notification.observability.NotificationMetrics;
-import com.dmg.notification.ratelimit.RateLimiterRegistry;
+import com.dmg.notification.ratelimit.RedisRateLimiterRegistry;
 import com.dmg.notification.repository.DeliveryAttemptRepository;
 import com.dmg.notification.repository.NotificationRepository;
 import com.dmg.notification.repository.NotificationRequestRepository;
@@ -49,7 +49,7 @@ class DispatchServiceTest {
     @Mock DeliveryAttemptRepository deliveryAttemptRepository;
     @Mock NotificationEventPublisher eventPublisher;
     @Mock NotificationStatusPublisher statusPublisher;
-    @Mock RateLimiterRegistry rateLimiterRegistry;
+    @Mock RedisRateLimiterRegistry rateLimiterRegistry;
     @Mock CircuitBreakerRegistry circuitBreakerRegistry;
     @Mock CircuitBreaker circuitBreaker;
     @Mock ChannelDispatcher emailDispatcher;

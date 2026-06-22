@@ -1,7 +1,7 @@
 package com.dmg.notification.unit;
 
 import com.dmg.notification.domain.enums.Channel;
-import com.dmg.notification.ratelimit.RateLimiterRegistry;
+import com.dmg.notification.ratelimit.RedisRateLimiterRegistry;
 import com.dmg.notification.repository.RateLimitConfigRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,17 +19,17 @@ import static org.mockito.Mockito.*;
  * Tests the in-memory (fallback) path. Redis tests are covered in RateLimitIntegrationTest.
  */
 @ExtendWith(MockitoExtension.class)
-class RateLimiterRegistryTest {
+class RedisRateLimiterRegistryTest {
 
     @Mock RateLimitConfigRepository rateLimitConfigRepository;
 
-    RateLimiterRegistry registry;
+    RedisRateLimiterRegistry registry;
     UUID tenantId;
 
     @BeforeEach
     void setUp() {
         // No Redis injected → always uses in-memory fallback
-        registry = new RateLimiterRegistry(rateLimitConfigRepository);
+        registry = new RedisRateLimiterRegistry(rateLimitConfigRepository);
         tenantId = UUID.randomUUID();
     }
 

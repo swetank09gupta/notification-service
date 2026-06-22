@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
-public class RateLimiterRegistry {
+public class RedisRateLimiterRegistry {
 
     private static final int DEFAULT_RPM = 60;
     private static final int DEFAULT_RPH = 1000;
@@ -45,7 +45,7 @@ public class RateLimiterRegistry {
 
     private final ConcurrentHashMap<String, TokenBucket> buckets = new ConcurrentHashMap<>();
 
-    public RateLimiterRegistry(RateLimitConfigRepository rateLimitConfigRepository) {
+    public RedisRateLimiterRegistry(RateLimitConfigRepository rateLimitConfigRepository) {
         this.rateLimitConfigRepository = rateLimitConfigRepository;
     }
 

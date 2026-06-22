@@ -7,7 +7,7 @@ import com.dmg.notification.dto.request.CreateTenantRequest;
 import com.dmg.notification.dto.request.RateLimitConfigRequest;
 import com.dmg.notification.dto.response.TenantResponse;
 import com.dmg.notification.exception.TenantNotFoundException;
-import com.dmg.notification.ratelimit.RateLimiterRegistry;
+import com.dmg.notification.ratelimit.RedisRateLimiterRegistry;
 import com.dmg.notification.repository.RateLimitConfigRepository;
 import com.dmg.notification.repository.TenantRepository;
 import com.dmg.notification.repository.UserRepository;
@@ -35,7 +35,7 @@ class TenantServiceTest {
     @Mock TenantRepository tenantRepository;
     @Mock UserRepository userRepository;
     @Mock RateLimitConfigRepository rateLimitConfigRepository;
-    @Mock RateLimiterRegistry rateLimiterRegistry;
+    @Mock RedisRateLimiterRegistry rateLimiterRegistry;
     @Mock PasswordEncoder passwordEncoder;
 
     TenantService service;

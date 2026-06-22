@@ -9,7 +9,7 @@ import com.dmg.notification.dto.request.CreateTenantRequest;
 import com.dmg.notification.dto.request.RateLimitConfigRequest;
 import com.dmg.notification.dto.response.TenantResponse;
 import com.dmg.notification.exception.TenantNotFoundException;
-import com.dmg.notification.ratelimit.RateLimiterRegistry;
+import com.dmg.notification.ratelimit.RedisRateLimiterRegistry;
 import com.dmg.notification.repository.RateLimitConfigRepository;
 import com.dmg.notification.repository.TenantRepository;
 import com.dmg.notification.repository.UserRepository;
@@ -30,7 +30,7 @@ public class TenantService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final RateLimitConfigRepository rateLimitConfigRepository;
-    private final RateLimiterRegistry rateLimiterRegistry;
+    private final RedisRateLimiterRegistry rateLimiterRegistry;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
