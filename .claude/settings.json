@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/swetank.g/Downloads/DMG/sde3/notification-service && mvn compile -q 2>&1 | head -40"
+          }
+        ]
+      }
+    ]
+  }
+}

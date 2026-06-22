@@ -1,0 +1,146 @@
+spring:
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:notification_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+        acks: all
+        retries: 3
+        max.in.flight.requests.per.connection: 1
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.dmg.notification.kafka"
+        spring.json.value.default.type: "com.dmg.notification.kafka.NotificationEvent"
+    listener:
+      concurrency: ${KAFKA_CONSUMER_CONCURRENCY:5}
+      ack-mode: BATCH
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 10
+          min-idle: 2
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    expiration-ms: 86400000  # 24 hours
+
+  dispatch:
+    global-concurrency-limit: 200
+    per-tenant-concurrency-limit: 20
+
+  retry:
+    max-attempts: 5
+    initial-delay-seconds: 30
+    backoff-multiplier: 4
+
+  scheduler:
+    retry-poll-interval-ms: 10000
+    scheduled-poll-interval-ms: 10000
+
+  kafka:
+    # Internal dispatch pipeline
+    topic-dispatch: notification.dispatch
+    topic-retry: notification.retry
+    topic-dlq: notification.dlq
+    dispatch-partitions: 10
+    retry-partitions: 10
+    dlq-partitions: 1
+    # External-facing topics (producers/consumers outside this service)
+    topic-requests: notification.requests   # upstream services publish HERE
+    topic-status: notification.status       # downstream services subscribe HERE
+    requests-partitions: 10                 # partitioned by correlationId
+    status-partitions: 10                   # partitioned by correlationId
+
+  batch:
+    max-size: 500
+
+# Resilience4j circuit breakers — one per channel
+# Opens after 50% failure in last 10 calls (min 5 calls required)
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+    instances:
+      email:
+        base-config: default
+      sms:
+        base-config: default
+      whatsapp:
+        base-config: default
+        wait-duration-in-open-state: 120s  # WhatsApp outages tend to be longer
+        permitted-number-of-calls-in-half-open-state: 2
+      push:
+        base-config: default
+      in_app:
+        base-config: default
+        wait-duration-in-open-state: 30s   # In-app recovers fast
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: notification-service
+      environment: ${APP_ENV:local}
+    distribution:
+      percentiles-histogram:
+        notification.dispatch.duration: true   # enables P50/P95/P99 histogram
+      percentiles:
+        notification.dispatch.duration: 0.5,0.95,0.99
+
+logging:
+  level:
+    com.dmg.notification: INFO
+    org.springframework.security: WARN
+    org.springframework.kafka: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %5p [%X{requestId:--} %X{tenantId:--} %X{correlationId:--}] %c{1} - %m%n"

@@ -1,0 +1,42 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+    listener:
+      concurrency: 1   # single consumer thread for deterministic test ordering
+
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    expiration-ms: 3600000
+
+  dispatch:
+    global-concurrency-limit: 10
+    per-tenant-concurrency-limit: 5
+
+  retry:
+    max-attempts: 3
+    initial-delay-seconds: 1   # 1s vs 30s in prod — faster retry in tests
+    backoff-multiplier: 2
+
+  scheduler:
+    retry-poll-interval-ms: 500
+    scheduled-poll-interval-ms: 500
+
+# Circuit breakers: require many failures before tripping so unit/integration tests
+# don't accidentally open them during normal failure-path testing.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        minimum-number-of-calls: 50
+        sliding-window-size: 100
+        failure-rate-threshold: 90

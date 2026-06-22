@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs before every `git commit`
+# Enforces compile correctness + fast unit tests + architectural rules
+#
+# Install: git config core.hooksPath .githooks
+# (done automatically by `mvn initialize` via maven-antrun-plugin — see pom.xml)
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "━━━ Pre-commit checks ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# 1. Compile ─────────────────────────────────────────────────────
+echo "► Compiling..."
+if ! mvn compile -q 2>&1; then
+  echo ""
+  echo "✖ COMPILE FAILED — fix errors before committing."
+  echo "  Run: mvn compile"
+  exit 1
+fi
+echo "  ✓ Compile OK"
+
+# 2. Test compile ────────────────────────────────────────────────
+echo "► Compiling tests..."
+if ! mvn test-compile -q 2>&1; then
+  echo ""
+  echo "✖ TEST COMPILE FAILED — fix errors before committing."
+  exit 1
+fi
+echo "  ✓ Test compile OK"
+
+# 3. Unit tests (no Docker, fast) ────────────────────────────────
+echo "► Running unit tests..."
+if ! mvn test -q -Dtest="TokenBucketTest,TemplateEngineTest,BoundedDispatchPoolTest,ArchitectureRulesTest" 2>&1; then
+  echo ""
+  echo "✖ UNIT TESTS FAILED — fix failing tests before committing."
+  echo "  Run: mvn test -Dtest=\"TokenBucketTest,TemplateEngineTest,BoundedDispatchPoolTest,ArchitectureRulesTest\""
+  echo ""
+  echo "  If ArchitectureRulesTest failed, you may have violated an architectural invariant."
+  echo "  See CLAUDE.md 'Architectural Invariants' and docs/adr/ for the rules."
+  exit 1
+fi
+echo "  ✓ Unit + architecture tests OK"
+
+# 4. Dangerous pattern scan ──────────────────────────────────────
+echo "► Scanning for dangerous patterns..."
+
+STAGED_JAVA=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.java$' || true)
+
+if [ -n "$STAGED_JAVA" ]; then
+  VIOLATIONS=""
+
+  # No System.out (ArchUnit catches this too, but fast-fail here)
+  if grep -l "System\.out\." $STAGED_JAVA 2>/dev/null; then
+    VIOLATIONS="$VIOLATIONS\n  • System.out found in staged Java files — use @Slf4j log.*"
+  fi
+
+  # No hardcoded secrets pattern (basic check)
+  if grep -E "(password|secret|api.?key)\s*=\s*['\"][^$\{]" $STAGED_JAVA 2>/dev/null | grep -v test; then
+    VIOLATIONS="$VIOLATIONS\n  • Possible hardcoded secret — use \${ENV_VAR} instead"
+  fi
+
+  # TODO / FIXME check — every TODO must have an associated test or a tracking ticket
+  TODO_FILES=$(grep -l "// TODO\|// FIXME\|// HACK\|// XXX" $STAGED_JAVA 2>/dev/null || true)
+  if [ -n "$TODO_FILES" ]; then
+    for f in $TODO_FILES; do
+      TODOS=$(grep -n "// TODO\|// FIXME\|// HACK\|// XXX" "$f" 2>/dev/null || true)
+      VIOLATIONS="$VIOLATIONS\n  • Unresolved TODO/FIXME in $f:\n$(echo "$TODOS" | sed 's/^/      /')"
+      VIOLATIONS="$VIOLATIONS\n    → Either fix it now, move it to a tracking ticket, or add a test case that covers it."
+    done
+  fi
+
+  # New migration files must have IF NOT EXISTS
+  STAGED_MIGRATIONS=$(git diff --cached --name-only | grep 'V[0-9].*\.sql$' || true)
+  if [ -n "$STAGED_MIGRATIONS" ]; then
+    for f in $STAGED_MIGRATIONS; do
+      if ! grep -q "IF NOT EXISTS\|IF EXISTS" "$f" 2>/dev/null; then
+        VIOLATIONS="$VIOLATIONS\n  • Migration $f has no IF NOT EXISTS guard — see .claude/commands/add-migration.md"
+      fi
+    done
+  fi
+
+  if [ -n "$VIOLATIONS" ]; then
+    echo ""
+    echo "✖ DANGEROUS PATTERNS DETECTED:"
+    echo -e "$VIOLATIONS"
+    echo ""
+    echo "  Fix these issues or use 'git commit --no-verify' to override (not recommended)."
+    exit 1
+  fi
+fi
+echo "  ✓ No dangerous patterns"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✓ All pre-commit checks passed."
+echo ""
+echo "  Reminder: run 'mvn verify' (requires Docker) before pushing to ensure"
+echo "  full coverage ≥ 80% line / ≥ 75% branch. Report: target/site/jacoco/index.html"
