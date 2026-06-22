@@ -141,7 +141,7 @@ Phase 4 (20,000+ dispatch/sec):
 
 Phase 5 (100,000+ rate limit checks/sec):
   Bottleneck: Redis single node (~100,000 ops/sec)
-  Fix: Redis Cluster (3+ primaries). Update RateLimiterRegistry to use cluster client.
+  Fix: Redis Cluster (3+ primaries). Update RedisRateLimiterRegistry to use cluster client.
 
 Phase 6 (1PB+ storage):
   Bottleneck: Table size (sequential scan / index bloat)

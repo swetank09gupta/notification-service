@@ -56,7 +56,7 @@ Per-tenant, per-channel configuration. Controls whether a channel is enabled and
 | configJson | Provider-specific settings (future: encrypted at rest) |
 
 ### RateLimitConfig
-Per-tenant, per-channel rate limit. Loaded by `RateLimiterRegistry` to configure the Redis Lua script limits.
+Per-tenant, per-channel rate limit. Loaded by `RedisRateLimiterRegistry` to configure the Redis Lua script limits.
 
 | Field | Notes |
 |---|---|

@@ -330,7 +330,7 @@ All invalid request bodies return a structured `400` with per-field detail:
 | `207 Multi-Status` | Batch — check per-item status |
 | `400 Bad Request` | Validation failure (field errors included) |
 | `401 Unauthorized` | Missing or expired JWT |
-| `403 Forbidden` | Token valid but wrong tenant |
+| `403 Forbidden` | Token valid but wrong role or wrong tenant |
 | `404 Not Found` | Tenant, template, or notification not found |
 | `409 Conflict` | Duplicate idempotency key |
 | `500 Internal Server Error` | Unexpected error (logged with trace ID) |
@@ -426,27 +426,31 @@ curl -s "$BASE/api/tenants/$TENANT_ID/reports" \
 
 ```bash
 # Unit tests only — no Docker required (166 tests, ~15 s)
-mvn test -Dmaven.test.failure.ignore=true
+mvn test -Dsurefire.excludes="**/integration/**"
 
 # Single unit test class
 mvn test -Dtest="DispatchServiceTest"
 
 # Full suite with integration tests — requires Docker (Testcontainers: PG + Redis + Kafka)
+# On macOS with Docker Desktop, set the socket first:
+export DOCKER_HOST=unix:///var/run/docker.sock
 mvn verify
 
-# Coverage report (requires Docker for full coverage; unit-only gives ~69% line)
-mvn test jacoco:report -Dmaven.test.failure.ignore=true
+# Coverage report without integration tests
+mvn verify -Dsurefire.excludes="**/integration/**"
 # Open: target/site/jacoco/index.html
 ```
 
 ### Coverage
 
-| Scope | Line | Branch |
-|---|---|---|
-| Unit tests only (no Docker) | ~69% | ~63% |
-| Unit + Integration tests (Docker) | ≥80% | ≥75% |
+| Scope | Tests | Line | Branch |
+|---|---|---|---|
+| Unit tests only (no Docker) | 166 | ~69% | ~61% |
+| Unit + Integration tests (Docker) | 171+ | ≥80% | ≥75% |
 
-JaCoCo enforces 80% line / 75% branch on `mvn verify`. Excluded: `*Application.class`, `dto/**`, `domain/enums/**`, `*Exception.class`.
+JaCoCo enforces 80% line / 75% branch on `mvn verify`. Excluded from coverage check: `*Application.class`, `dto/**`, `domain/enums/**`, `*Exception.class`.
+
+The gap between unit-only and full coverage comes from Kafka config, publishers, consumers, Redis rate-limiter, and SecurityConfig — all of which are wired end-to-end in the Testcontainers integration tests.
 
 ---
 

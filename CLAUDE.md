@@ -16,11 +16,16 @@ mvn compile -q
 # Compile everything including tests
 mvn test-compile -q
 
-# Unit tests only (no Docker required)
-mvn test -Dtest="TokenBucketTest,TemplateEngineTest,BoundedDispatchPoolTest"
+# Unit tests only (no Docker required) — 166 tests, ~15 s
+mvn test -Dsurefire.excludes="**/integration/**"
 
-# Full test suite (Docker required — Testcontainers starts PG + Redis + Kafka)
-mvn test
+# Full test suite with JaCoCo coverage check (requires Docker)
+# On macOS with Docker Desktop, export DOCKER_HOST first:
+#   export DOCKER_HOST=unix:///var/run/docker.sock
+mvn verify
+
+# Skip integration tests but still run JaCoCo report
+mvn verify -Dsurefire.excludes="**/integration/**"
 
 # Single integration test class
 mvn test -Dtest="NotificationFlowIntegrationTest"
@@ -29,8 +34,8 @@ mvn test -Dtest="NotificationFlowIntegrationTest"
 DB_HOST=localhost REDIS_HOST=localhost KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
   mvn spring-boot:run
 
-# Full stack via Docker Compose
-docker-compose up --build
+# Full stack via Docker Compose (V2 syntax)
+docker compose up --build
 ```
 
 ---
@@ -47,7 +52,7 @@ src/main/java/com/dmg/notification/
 ├── dto/            Request / response DTOs (no JPA annotations allowed here)
 ├── exception/      GlobalExceptionHandler, typed domain exceptions
 ├── kafka/          5-topic pipeline — see docs/context/kafka-topology.md
-├── ratelimit/      RateLimiterRegistry (Redis primary, TokenBucket fallback)
+├── ratelimit/      RedisRateLimiterRegistry (Redis primary, TokenBucket fallback)
 ├── repository/     Spring Data JPA — one interface per aggregate root
 ├── scheduler/      NotificationScheduler (retry poller + schedule poller)
 ├── security/       JWT filter, JwtTokenProvider, UserPrincipal

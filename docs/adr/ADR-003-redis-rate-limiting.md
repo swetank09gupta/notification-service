@@ -45,7 +45,7 @@ return 1
 
 Keys: `rl:{tenantId}:{channel}:m:{epochMinute}` and `rl:{tenantId}:{channel}:h:{epochHour}`.
 
-**Fallback**: if Redis is unavailable (connection error, timeout), `RateLimiterRegistry`
+**Fallback**: if Redis is unavailable (connection error, timeout), `RedisRateLimiterRegistry`
 falls back to the per-process in-memory `TokenBucket`. Rate limiting degrades gracefully to
 per-instance enforcement rather than failing the dispatch attempt.
 
