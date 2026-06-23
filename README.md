@@ -6,6 +6,12 @@ Designed for high-throughput flash-sale scenarios — HTTP tier always returns `
 
 ---
 
+## High-Level Design
+
+For a full design walkthrough with Mermaid diagrams, sequence diagrams, data model, and key decision rationale, see **[docs/hld.md](docs/hld.md)**.
+
+---
+
 ## Architecture
 
 ```
